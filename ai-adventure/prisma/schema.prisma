@@ -1,0 +1,85 @@
+// Prisma schema for AI Adventure platform
+// Using PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  role         Role     @default(CUSTOMER)
+  stripeId     String?
+  memberships  Membership[]
+  orders       Order[]
+  createdAt    DateTime @default(now())
+}
+
+model Lead {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  source    LeadSource
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+enum LeadSource {
+  WEBINAR
+  CAMP
+  RETREAT
+  CORPORATE
+  OTHER
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+model Order {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  product     Product
+  stripeIntent String
+  amount      Int
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+}
+
+enum Product {
+  WEBINAR
+  CAMP
+  RETREAT
+  MEMBERSHIP
+  CORPORATE
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+}
+
+model Membership {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  stripeSub  String   @unique
+  status     MembershipStatus @default(ACTIVE)
+  startedAt  DateTime
+  endsAt     DateTime?
+}
+
+enum MembershipStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+}
